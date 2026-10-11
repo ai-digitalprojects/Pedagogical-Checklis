@@ -1,0 +1,100 @@
+/* Presentation mode: sized in `em` so everything scales with the screen. */
+body.is-presenting { overflow: hidden; background: #0c0928; }
+body.is-presenting .topbar { display: none; }
+
+.present {
+  position: fixed; inset: 0; z-index: 100; overflow: hidden;
+  font-size: clamp(13px, 1.15vw + 0.3vh, 30px);
+  color: #fff; display: flex; flex-direction: column;
+  background: #0c0928;
+}
+.present-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60em 40em at 85% 0%, color-mix(in srgb, var(--c, #7c3aed) 55%, transparent), transparent 70%),
+    radial-gradient(50em 40em at 0% 100%, color-mix(in srgb, var(--c2, #d946a8) 40%, transparent), transparent 70%),
+    linear-gradient(160deg, #150f3e, #0a0722);
+  transition: background 0.8s;
+}
+.stage { position: relative; flex: 1; min-height: 0; padding: 2em 3.4em 0; display: flex; overflow: hidden; }
+.slide { flex: 1; min-height: 0; animation: slide-in 0.7s var(--ease) both; }
+@keyframes slide-in { from { opacity: 0; transform: translateX(-3em) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.pbar { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 1em 3.4em 1.4em; gap: 1em; }
+.pgroup { display: flex; align-items: center; gap: 0.7em; }
+.pbtn {
+  display: inline-flex; align-items: center; gap: 0.5em; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.1);
+  color: #fff; border-radius: 999px; min-width: 2.8em; height: 2.8em; padding: 0 0.9em; justify-content: center; font-weight: 700; font-size: 0.9em;
+  backdrop-filter: blur(8px); transition: background 0.2s, transform 0.2s;
+}
+.pbtn:hover { background: rgba(255, 255, 255, 0.24); transform: translateY(-2px); }
+.pbtn.on { background: #fff; color: #2a1a8a; }
+.pbtn .icon { width: 1.3em; height: 1.3em; }
+.pdots { display: flex; gap: 0.6em; padding: 0 0.6em; }
+.pdot { width: 0.8em; height: 0.8em; padding: 0; border-radius: 999px; border: 0; background: rgba(255, 255, 255, 0.3); transition: all 0.3s var(--ease); }
+.pdot.active { width: 2.6em; background: #fff; }
+
+/* overview slide */
+.slide-overview { display: flex; flex-direction: column; gap: 2em; }
+.ov-head { display: flex; align-items: center; gap: 1.6em; }
+.ov-head h1 { font-size: 3.2em; font-weight: 800; line-height: 1; }
+.ov-head h2 { font-size: 1.35em; font-weight: 600; opacity: 0.9; margin-top: 0.3em; }
+.ov-head .pill { margin-bottom: 0.5em; }
+.ov-head .logo-lg { width: 8.4em; height: 8.4em; }
+.ov-body { flex: 1; min-height: 0; display: grid; grid-template-columns: auto 1fr; gap: 3.6em; align-items: center; }
+.ov-ring { display: flex; flex-direction: column; align-items: center; gap: 1.2em; }
+.ov-ring .ring { --ring-size: 17em !important; }
+.ov-stats { display: flex; gap: 1.2em; }
+.ov-stats span { background: rgba(255, 255, 255, 0.12); border-radius: 1em; padding: 0.5em 1em; font-weight: 600; display: flex; gap: 0.5em; align-items: baseline; }
+.ov-stats b { font-size: 1.6em; font-weight: 800; }
+.ov-stats .warn { background: rgba(255, 70, 100, 0.4); }
+.ov-subjects { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
+.ov-card {
+  display: flex; align-items: center; gap: 1.1em; padding: 1.4em; border-radius: 1.6em;
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(10px);
+}
+.ov-card .sc-icon { width: 3.6em; height: 3.6em; border-radius: 1.1em; }
+.ov-card .sc-icon .icon { width: 2em; height: 2em; }
+.ov-card-main { flex: 1; display: flex; flex-direction: column; gap: 0.6em; min-width: 0; }
+.ov-card h3 { font-size: 1.5em; font-weight: 800; }
+.ov-card .bar { height: 0.7em; background: rgba(255, 255, 255, 0.16); }
+.ov-pct { font-size: 2.6em; font-weight: 800; direction: ltr; }
+
+/* subject slide */
+.slide-subject { display: grid; grid-template-columns: auto 1.25fr 1fr; gap: 3em; align-items: center; }
+.ss-id { display: flex; flex-direction: column; align-items: center; gap: 0.7em; text-align: center; }
+.ss-id h1 { font-size: 3.6em; font-weight: 800; line-height: 1; }
+.ss-id p { opacity: 0.85; font-size: 1.1em; margin-top: -0.3em; margin-bottom: 0.6em; }
+.ss-id .ring { --ring-size: 15em !important; }
+.banner-icon.xl { width: 5.4em; height: 5.4em; border-radius: 1.7em; background: linear-gradient(135deg, var(--c), var(--c2)); border: 0; box-shadow: 0 1.2em 2.4em -1em var(--c); }
+.banner-icon.xl .icon { width: 3em; height: 3em; }
+.ss-cats { display: flex; flex-direction: column; gap: 1.05em; background: rgba(255, 255, 255, 0.08); padding: 1.8em; border-radius: 1.8em; border: 1px solid rgba(255, 255, 255, 0.15); }
+.ss-row { display: grid; grid-template-columns: 12em 1fr 3.4em; gap: 1em; align-items: center; font-weight: 600; }
+.ss-row .bar { height: 0.9em; background: rgba(255, 255, 255, 0.16); }
+.ss-row .seg-done { background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--c2) 45%, #fff)); }
+.ss-row .seg-doing { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0 0.4em, rgba(255, 255, 255, 0.25) 0.4em 0.8em); }
+.ss-pct { font-weight: 800; font-size: 1.1em; direction: ltr; text-align: end; }
+.ss-lists { display: flex; flex-direction: column; gap: 0.8em; }
+.pl { padding: 0.9em 1.2em; border-radius: 1.4em; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.16); }
+.pl h4 { font-size: 1em; font-weight: 800; margin-bottom: 0.5em; display: flex; align-items: center; gap: 0.5em; }
+.pl h4::before { content: ''; width: 0.7em; height: 0.7em; border-radius: 50%; background: #fff; }
+.pl-late h4::before { background: #ff6f91; }
+.pl-doing h4::before { background: #ffc933; }
+.pl-next h4::before { background: #6ee7b7; }
+.pl li { display: flex; justify-content: space-between; gap: 1em; padding: 0.35em 0; font-size: 0.88em; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.pl li:first-child { border-top: 0; }
+.pl li span { flex: 1; line-height: 1.3; }
+.pl li em { font-style: normal; font-weight: 700; opacity: 0.8; white-space: nowrap; }
+.pl p { opacity: 0.7; font-size: 0.9em; }
+.pexit { background: rgba(255, 70, 100, 0.3); border-color: rgba(255, 120, 140, 0.5); }
+
+@media (max-width: 1000px), (max-aspect-ratio: 1/1) {
+  body.is-presenting { overflow: auto; }
+  .present { position: relative; min-height: 100vh; font-size: 14px; }
+  .stage { padding: 1.4em 1.2em 0; }
+  .slide-overview .ov-body, .slide-subject { grid-template-columns: 1fr; }
+  .ov-subjects { grid-template-columns: 1fr; }
+  .ov-head h1 { font-size: 2.2em; }
+  .ss-row { grid-template-columns: 8em 1fr 3em; }
+  .pbar { padding: 1em 1.2em 1.4em; flex-wrap: wrap; justify-content: center; }
+}

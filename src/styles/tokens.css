@@ -1,0 +1,31 @@
+:root {
+  --font: 'Heebo', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+
+  /* brand */
+  --c: #5b3df5;
+  --c2: #a855f7;
+  --c-soft: #efeaff;
+  --c-dark: #3c22c4;
+
+  --bg: #f3f0ff;
+  --surface: #ffffff;
+  --ink: #1d1b3b;
+  --muted: #6c6a8c;
+  --line: #e6e2f7;
+
+  --ok: #12a37a;
+  --warn: #d97706;
+  --late: #e11d48;
+
+  --r-lg: 28px;
+  --r-md: 20px;
+  --r-sm: 12px;
+  --shadow: 0 14px 34px -18px rgba(54, 36, 160, 0.38), 0 2px 6px rgba(54, 36, 160, 0.06);
+  --shadow-lg: 0 26px 50px -22px rgba(54, 36, 160, 0.5);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-subject='english'] { --c: #2f62ff; --c2: #7c5cff; --c-soft: #e8eeff; --c-dark: #1b3fb5; }
+[data-subject='math']    { --c: #ff7a1a; --c2: #ffb02e; --c-soft: #fff0df; --c-dark: #b34700; }
+[data-subject='hebrew']  { --c: #e8318a; --c2: #ff6f91; --c-soft: #ffe6f2; --c-dark: #a3125f; }
+[data-subject='science'] { --c: #0fb37f; --c2: #19c3d6; --c-soft: #dcf8ee; --c-dark: #07765a; }
