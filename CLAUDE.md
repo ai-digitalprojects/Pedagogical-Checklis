@@ -14,20 +14,19 @@ Prototype for presentation to school leadership.
 - Task categories, completion checkboxes, status indicators, progress bars, overall progress statistics.
 - Polished and engaging; suitable for presenting to school leadership.
 - Desktop and mobile layouts (mobile-first, responsive).
-- Demonstration changes persist locally in the browser (`localStorage`).
+- All data lives in ONE central Google Sheet, saved automatically through a small Google Apps Script backend (`backend/Code.gs`). `localStorage` holds only the access code, never task data.
 
 ## Hard constraints
 - **Standalone project.** Do not touch, import from, or modify any other repository, database, or deployment.
-- **No external services or integrations.** No backend, no network calls, no analytics, no auth, no CDN dependencies at runtime (fonts/icons bundled locally).
+- **Only integration:** the Google Sheet via the Apps Script web app (`src/storage/sheetsApi.js`, URL in `src/config.js`). No other services, no analytics, no CDN dependencies at runtime (fonts/icons bundled locally). Access is by per-subject edit codes + one read-only viewer code kept in Apps Script Script Properties — never commit codes. Do NOT connect to the Principal's Dashboard.
 - **No real student data.** Sample tasks only; never add names, grades, or identifiers of real people.
-- Do NOT implement the future integrations listed below.
+- Do NOT implement the future items listed below.
 
 ## Future (NOT now; design so they can be added cleanly)
-- Connection to an existing School Management Dashboard.
-- Secure data storage.
-- Google Drive backups.
+- Connection to the existing School Management Dashboard (explicitly NOT now).
+- Real Google sign-in instead of access codes; Google Drive backups.
 
-To keep this possible: all persistence goes through a single storage module (`src/storage/`) with a small interface (`load()`, `save(state)`, `reset()`), so localStorage can later be swapped for an API without touching UI code. Data shapes are plain JSON-serializable objects with stable string IDs and a `schemaVersion`.
+Persistence goes through `src/state/store.js` and `src/storage/sheetsApi.js` (login/list/upsert/remove), so the backend can be swapped without touching the views. Data shapes are plain JSON-serializable objects with stable string IDs and a `schemaVersion`.
 
 ## Development rules
 - Modular, maintainable code; small single-purpose modules; no giant files.
@@ -50,8 +49,8 @@ To keep this possible: all persistence goes through a single storage module (`sr
 - `npm install` then `npm run dev` → http://127.0.0.1:5173
 - `npm run build` / `npm run preview` → production check
 - Hash routes: `#/` dashboard, `#/s/<english|math|hebrew|science>` checklist, `#/present` presentation mode (←/→ navigate, Space auto-play, F fullscreen, Esc exit)
-- Storage key `gavim-pedagogical-checklist-simple` (schemaVersion 2); the older key is never touched. The header reset button restores the simplified seed data.
+- Backend: Google Sheet tab "Tasks" (id, subject, category, title, status, due, note, deleted, updatedAt). Sheets start empty; deletes are soft (deleted=TRUE). The header button logs out / switches access code.
 - Subject colors are the `--c`/`--c2`/`--c-soft`/`--c-dark` variables set via `[data-subject]` in `src/styles/tokens.css`.
 
-## Planned access model (not implemented)
-Each subject coordinator will edit only her own subject; the pedagogical coordinator and principal get read-only access to all subjects. The tool tracks pedagogical processes, never individual teachers. Keep tasks keyed by `subject` and route all reads/writes through `src/state/store.js` + `src/storage/` so auth, roles, Supabase or Drive can be added later without touching the views. No auth/roles/backends now.
+## Access model (implemented with access codes)
+Each subject coordinator will edit only her own subject; the pedagogical coordinator and principal get read-only access to all subjects. The tool tracks pedagogical processes, never individual teachers. Keep tasks keyed by `subject` and route all reads/writes through `src/state/store.js` + `src/storage/` so real sign-in or another backend can be added later without touching the views.

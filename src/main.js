@@ -11,11 +11,12 @@ import './styles/views.css';
 import './styles/present.css';
 
 import { h } from './utils/dom.js';
-import { subscribe } from './state/store.js';
+import { subscribe, getState, init } from './state/store.js';
 import { buildHeader, markActive } from './components/header.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderSubject } from './views/subject.js';
 import { mountPresent } from './views/present.js';
+import { renderLogin } from './views/login.js';
 
 const app = document.getElementById('app');
 const header = buildHeader();
@@ -24,6 +25,7 @@ app.append(header, main);
 
 let cleanup = null;
 let lastRouteKey = null;
+let wasReady = false;
 
 function parseRoute() {
   const raw = location.hash || '#/';
@@ -33,25 +35,35 @@ function parseRoute() {
 
 function render({ routeChanged }) {
   const { path, params } = parseRoute();
-  const animate = routeChanged;
+  const ready = getState().phase === 'ready';
+  const fresh = routeChanged || (ready && !wasReady);
+  const animate = fresh;
   const scrollY = window.scrollY;
+  wasReady = ready;
 
   cleanup?.();
   cleanup = null;
+  document.body.classList.toggle('is-locked', !ready);
+  if (!ready) {
+    document.body.classList.remove('is-presenting');
+    document.body.dataset.subject = '';
+    renderLogin(main);
+    return;
+  }
   document.body.classList.toggle('is-presenting', path === '#/present');
   markActive(header, path);
 
   if (path === '#/present') {
     cleanup = mountPresent(main);
   } else if (path.startsWith('#/s/')) {
-    renderSubject(main, path.slice(4), { animate, focusTask: routeChanged ? params.get('task') : null });
+    renderSubject(main, path.slice(4), { animate, focusTask: fresh ? params.get('task') : null });
   } else {
     renderDashboard(main, { animate });
   }
 
   const subjectId = path.startsWith('#/s/') ? path.slice(4) : '';
   document.body.dataset.subject = subjectId;
-  if (routeChanged) window.scrollTo({ top: 0 });
+  if (fresh) window.scrollTo({ top: 0 });
   else window.scrollTo({ top: scrollY });
 }
 
@@ -64,6 +76,9 @@ function onRoute() {
 
 window.addEventListener('hashchange', onRoute);
 subscribe(() => {
-  if (parseRoute().path !== '#/present') render({ routeChanged: false });
+  // Presentation Mode keeps its own slide state; only re-render it when readiness changes.
+  if (parseRoute().path === '#/present' && wasReady && getState().phase === 'ready') return;
+  render({ routeChanged: false });
 });
+init();
 onRoute();

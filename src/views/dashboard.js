@@ -6,6 +6,7 @@ import { getState } from '../state/store.js';
 import { summarize, bySubject, byCategory } from '../utils/progress.js';
 import { ring, stackedBar } from '../components/ring.js';
 import { logo } from '../components/header.js';
+import { saveStatus } from '../components/saveStatus.js';
 
 function statTile(kind, iconSvg, value, label) {
   return h('div', { class: `stat stat-${kind}` }, h('div', { class: 'stat-icon' }, icon(iconSvg)), h('div', {}, h('div', { class: 'stat-value' }, String(value)), h('div', { class: 'stat-label' }, label)));
@@ -106,7 +107,7 @@ export function renderDashboard(root, { animate }) {
       h('h2', { class: 'section-title' }, S.subjectsTitle),
       h('div', { class: 'subjects-grid' }, SUBJECTS.map((s) => subjectCard(s, tasks, animate))),
       h('div', { class: 'two-col' }, attentionCard(tasks), matrixCard(tasks)),
-      h('p', { class: 'footnote' }, S.draftNote, h('br'), S.demoNote),
+      h('p', { class: 'footnote' }, S.draftNote, h('br'), S.demoNote, ' · ', saveStatus()),
     ),
   );
 }

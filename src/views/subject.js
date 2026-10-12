@@ -2,7 +2,8 @@ import { h, icon } from '../utils/dom.js';
 import { ICONS } from '../data/icons.js';
 import { S } from '../data/strings.he.js';
 import { CATEGORIES, subjectById } from '../data/subjects.js';
-import { getState, updateTask } from '../state/store.js';
+import { getState, updateTask, canEdit } from '../state/store.js';
+import { saveStatus } from '../components/saveStatus.js';
 import { summarize, bySubject, byCategory } from '../utils/progress.js';
 import { ring, stackedBar } from '../components/ring.js';
 import { openAddTask } from '../components/addTaskDialog.js';
@@ -42,7 +43,10 @@ export function renderSubject(root, subjectId, { animate, focusTask }) {
   const subjTasks = bySubject(getState().tasks, subjectId);
   const sum = summarize(subjTasks);
 
+  const readOnly = !canEdit(subjectId);
+
   const ctx = {
+    readOnly,
     expanded: view.expanded,
     setStatus,
     toggleExpand(id, li) {
@@ -124,12 +128,12 @@ export function renderSubject(root, subjectId, { animate, focusTask }) {
             h('span', {}, h('b', {}, String(sum.doing)), S.filters.doing),
             h('span', {}, h('b', {}, String(sum.todo)), S.filters.todo),
           ),
-          h('button', { type: 'button', class: 'btn btn-hero', onclick: addTask }, icon(ICONS.plus), S.addTask),
+          !readOnly && h('button', { type: 'button', class: 'btn btn-hero', onclick: addTask }, icon(ICONS.plus), S.addTask),
         ),
         h('div', { class: 'banner-ring' }, ring({ pct: sum.pct, size: 170, stroke: 16, sub: `${sum.done}/${sum.total}`, animate, cls: 'ring-hero' })),
       ),
       listHost,
-      h('p', { class: 'footnote' }, S.draftNote, h('br'), S.demoNote),
+      h('p', { class: 'footnote' }, S.draftNote, h('br'), S.demoNote, ' · ', saveStatus(), readOnly && ` · ${S.readOnlyNote}`),
     ),
   );
 

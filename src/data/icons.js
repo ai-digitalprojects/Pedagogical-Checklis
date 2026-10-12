@@ -23,5 +23,6 @@ export const ICONS = {
   expand: `<svg ${S}><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>`,
   close: `<svg ${S}><path d="M6 6l12 12M18 6L6 18"/></svg>`,
   pause: `<svg ${S}><path d="M8 5v14M16 5v14"/></svg>`,
+  logout: `<svg ${S}><path d="M10 4H5v16h5M15 8l4 4-4 4M9 12h10"/></svg>`,
   autoplay: `<svg ${S}><path d="M7 5l12 7-12 7z"/></svg>`,
 };
