@@ -2,7 +2,6 @@ import { h, icon } from '../utils/dom.js';
 import { ICONS } from '../data/icons.js';
 import { S } from '../data/strings.he.js';
 import { SUBJECTS } from '../data/subjects.js';
-import { logout } from '../state/store.js';
 import logoUrl from '../assets/logo.webp';
 
 // Official school logo (local asset, bundled by Vite).
@@ -30,17 +29,6 @@ export function buildHeader() {
       'div',
       { class: 'top-actions' },
       h('a', { class: 'btn btn-present', href: '#/present' }, icon(ICONS.play), h('span', {}, S.nav.present)),
-      h(
-        'button',
-        {
-          class: 'btn btn-icon',
-          type: 'button',
-          title: S.nav.logout,
-          'aria-label': S.nav.logout,
-          onclick: logout,
-        },
-        icon(ICONS.logout),
-      ),
     ),
   );
 }

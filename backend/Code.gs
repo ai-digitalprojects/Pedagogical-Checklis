@@ -2,23 +2,19 @@
  * Pedagogical Checklist backend — Google Apps Script bound to the Google Sheet.
  *
  * - One sheet tab ("Tasks"), one row per task, every task linked to its subject.
- * - Access is controlled by codes kept in Script Properties (never in the Sheet or the repo):
- *     CODE_english / CODE_math / CODE_hebrew / CODE_science -> edit that subject only
- *     CODE_viewer                                           -> read-only, all subjects
- * - The web app is deployed "Execute as: Me", so nobody else needs access to the Sheet.
+ * - No login: the checklist opens directly and all four subjects are editable.
+ * - The web app is deployed "Execute as: Me", so nobody else needs access to the Sheet itself.
  *
- * One-time setup: run setup() from the editor, then read the codes with showCodes().
+ * One-time setup: run setup() from the editor (creates the "Tasks" tab).
  */
 
 var SHEET_NAME = 'Tasks';
 var HEADERS = ['id', 'subject', 'category', 'title', 'status', 'due', 'note', 'deleted', 'updatedAt'];
 var SUBJECTS = ['english', 'math', 'hebrew', 'science'];
-var SUBJECT_LABELS = { english: 'אנגלית', math: 'מתמטיקה', hebrew: 'שפה עברית', science: 'מדעים', viewer: 'צפייה בלבד (מנהלת/רכזת פדגוגית)' };
 var CATEGORIES = ['plan', 'assess', 'lead'];
 var STATUSES = ['todo', 'doing', 'done'];
-var CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 characters, no I/O/0/1
 
-/* ------------------------------ setup & codes ------------------------------ */
+/* ---------------------------------- setup ---------------------------------- */
 
 function setup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -27,42 +23,8 @@ function setup() {
   sheet.getRange(1, 1, sheet.getMaxRows(), HEADERS.length).setNumberFormat('@');
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
   sheet.setFrozenRows(1);
-
-  var props = PropertiesService.getScriptProperties();
-  var existing = props.getProperties();
-  SUBJECTS.concat(['viewer']).forEach(function (key) {
-    if (!existing['CODE_' + key]) props.setProperty('CODE_' + key, randomCode_());
-  });
-  showCodes();
-}
-
-function showCodes() {
-  var props = PropertiesService.getScriptProperties().getProperties();
-  var lines = SUBJECTS.concat(['viewer']).map(function (key) {
-    return SUBJECT_LABELS[key] + ':  ' + formatCode_(props['CODE_' + key] || '(not set — run setup)');
-  });
-  Logger.log('\nקודי גישה (לשמור בסוד, לשלוח לכל רכזת רק את הקוד שלה):\n' + lines.join('\n'));
-}
-
-function rotateAllCodes() {
-  var props = PropertiesService.getScriptProperties();
-  SUBJECTS.concat(['viewer']).forEach(function (key) { props.setProperty('CODE_' + key, randomCode_()); });
-  showCodes();
-}
-
-function randomCode_() {
-  var hex = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
-  var out = '';
-  for (var i = 0; i < 8; i++) out += CODE_ALPHABET.charAt(parseInt(hex.substr(i * 2, 2), 16) % 32);
-  return out;
-}
-
-function formatCode_(code) {
-  return code.length === 8 ? code.substr(0, 4) + '-' + code.substr(4) : code;
-}
-
-function normalizeCode_(code) {
-  return String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Earlier versions stored access codes here; they are no longer used.
+  PropertiesService.getScriptProperties().deleteAllProperties();
 }
 
 /* ------------------------------- web app entry ------------------------------ */
@@ -87,26 +49,12 @@ function json_(obj) {
 }
 
 function handle_(req) {
-  var role = roleForCode_(req && req.code);
-  if (!role) return { ok: false, error: 'bad_code' };
-  switch (req.action) {
-    case 'login': return { ok: true, role: role.type, subject: role.subject || null };
+  switch (req && req.action) {
     case 'list': return { ok: true, tasks: listTasks_() };
-    case 'upsert': return withLock_(function () { return upsert_(role, req.task); });
-    case 'delete': return withLock_(function () { return remove_(role, req.id); });
+    case 'upsert': return withLock_(function () { return upsert_(req.task); });
+    case 'delete': return withLock_(function () { return remove_(req.id); });
   }
   return { ok: false, error: 'bad_action' };
-}
-
-function roleForCode_(code) {
-  var given = normalizeCode_(code);
-  if (given.length !== 8) return null;
-  var props = PropertiesService.getScriptProperties().getProperties();
-  if (given === normalizeCode_(props.CODE_viewer)) return { type: 'viewer' };
-  for (var i = 0; i < SUBJECTS.length; i++) {
-    if (given === normalizeCode_(props['CODE_' + SUBJECTS[i]])) return { type: 'editor', subject: SUBJECTS[i] };
-  }
-  return null;
 }
 
 function withLock_(fn) {
@@ -173,30 +121,22 @@ function findRow_(rows, id) {
   return -1;
 }
 
-function upsert_(role, task) {
-  if (role.type !== 'editor') return { ok: false, error: 'read_only' };
+function upsert_(task) {
   var clean = validate_(task);
   if (!clean) return { ok: false, error: 'invalid' };
-  if (clean.subject !== role.subject) return { ok: false, error: 'forbidden' };
 
   var sheet = getSheet_();
-  var rows = readRows_(sheet);
-  var idx = findRow_(rows, clean.id);
-  if (idx >= 0 && cellText_(rows[idx][1]) !== role.subject) return { ok: false, error: 'forbidden' };
-
+  var idx = findRow_(readRows_(sheet), clean.id);
   var rowNum = idx >= 0 ? idx + 2 : Math.max(sheet.getLastRow(), 1) + 1;
   var values = [clean.id, clean.subject, clean.category, clean.title, clean.status, clean.due, clean.note, '', new Date().toISOString()];
   sheet.getRange(rowNum, 1, 1, HEADERS.length).setNumberFormat('@').setValues([values]);
   return { ok: true };
 }
 
-function remove_(role, id) {
-  if (role.type !== 'editor') return { ok: false, error: 'read_only' };
+function remove_(id) {
   var sheet = getSheet_();
-  var rows = readRows_(sheet);
-  var idx = findRow_(rows, String(id || ''));
+  var idx = findRow_(readRows_(sheet), String(id || ''));
   if (idx < 0) return { ok: true };
-  if (cellText_(rows[idx][1]) !== role.subject) return { ok: false, error: 'forbidden' };
   sheet.getRange(idx + 2, 8, 1, 2).setValues([['TRUE', new Date().toISOString()]]);
   return { ok: true };
 }

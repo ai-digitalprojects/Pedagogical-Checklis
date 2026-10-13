@@ -16,7 +16,7 @@ import { buildHeader, markActive } from './components/header.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderSubject } from './views/subject.js';
 import { mountPresent } from './views/present.js';
-import { renderLogin } from './views/login.js';
+import { renderLoading } from './views/loading.js';
 
 const app = document.getElementById('app');
 const header = buildHeader();
@@ -47,7 +47,7 @@ function render({ routeChanged }) {
   if (!ready) {
     document.body.classList.remove('is-presenting');
     document.body.dataset.subject = '';
-    renderLogin(main);
+    renderLoading(main);
     return;
   }
   document.body.classList.toggle('is-presenting', path === '#/present');

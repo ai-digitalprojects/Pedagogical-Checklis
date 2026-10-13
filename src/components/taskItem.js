@@ -16,7 +16,6 @@ export function taskItem(task, ctx) {
     'aria-label': task.title,
     onchange: (e) => ctx.setStatus(task, e.target.checked ? 'done' : 'todo', li),
   });
-  checkbox.disabled = ctx.readOnly;
   checkbox.checked = task.status === 'done';
 
   const noteFlag = h('span', { class: 'chip chip-note', title: S.note }, icon(ICONS.note));
@@ -48,7 +47,7 @@ export function taskItem(task, ctx) {
     'div',
     { class: 'segmented', role: 'group', 'aria-label': 'סטטוס' },
     STATUSES.map((s) =>
-      h('button', { type: 'button', disabled: ctx.readOnly, class: `seg-btn seg-${s}`, 'aria-pressed': String(task.status === s), onclick: () => ctx.setStatus(task, s, li) }, S.status[s]),
+      h('button', { type: 'button', class: `seg-btn seg-${s}`, 'aria-pressed': String(task.status === s), onclick: () => ctx.setStatus(task, s, li) }, S.status[s]),
     ),
   );
 
@@ -85,8 +84,6 @@ export function taskItem(task, ctx) {
   });
   noteInput.value = task.note;
 
-  if (ctx.readOnly) [titleInput, dateInput, noteInput].forEach((el) => (el.disabled = true));
-
   const detail = h(
     'div',
     { class: 'task-detail' },
@@ -96,8 +93,7 @@ export function taskItem(task, ctx) {
       h('label', { class: 'lbl' }, S.due, dateInput),
     ),
     h('label', { class: 'lbl' }, S.note, noteInput),
-    !ctx.readOnly &&
-      h(
+    h(
         'button',
         {
           type: 'button',

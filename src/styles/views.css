@@ -163,16 +163,11 @@
 .mini-todo { background: #eceaf5; color: #5b5878; }
 .subject .categories { margin-top: 26px; }
 
-/* access-code screen, locked header, read-only fields */
+/* loading / connection screen, locked header */
 .is-locked .nav, .is-locked .top-actions { display: none; }
 .login { display: grid; place-items: center; min-height: 70vh; }
 .login-card { width: min(440px, 100%); display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 32px 28px; }
 .login-card h1 { font-size: 1.8rem; font-weight: 800; }
 .login-sub { color: var(--muted); font-weight: 600; margin-top: -8px; }
-.login-form { width: 100%; display: flex; flex-direction: column; gap: 14px; text-align: start; }
 .login-msg { color: var(--muted); }
-.login-error { color: var(--late); font-weight: 700; }
-.code-field { direction: ltr; text-align: center; letter-spacing: 0.2em; font-weight: 700; text-transform: uppercase; }
 .save-status { font-weight: 700; }
-.field:disabled { background: #faf9ff; opacity: 0.85; cursor: default; }
-.task input:disabled, .task button:disabled { cursor: default; }

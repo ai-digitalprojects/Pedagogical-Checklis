@@ -1,8 +1,7 @@
 import * as api from '../storage/sheetsApi.js';
 
-// phase: init | login | loading | ready | error
-let state = { phase: 'init', error: '', tasks: [], session: null };
-let code = '';
+// phase: loading | ready | error
+let state = { phase: 'loading', tasks: [] };
 let pollTimer = null;
 
 const subscribers = new Set();
@@ -20,7 +19,6 @@ const notifySync = () => syncSubscribers.forEach((fn) => fn());
 export const getState = () => state;
 export const getTask = (id) => state.tasks.find((t) => t.id === id);
 export const getSync = () => ({ pending: dirty.size, error: syncError });
-export const canEdit = (subject) => state.session?.role === 'editor' && state.session.subject === subject;
 
 export function subscribe(fn) {
   subscribers.add(fn);
@@ -32,65 +30,24 @@ export function subscribeSync(fn) {
   return () => syncSubscribers.delete(fn);
 }
 
-/* ------------------------------ session / loading ----------------------------- */
+/* ------------------------------------ loading ---------------------------------- */
 
-function setPhase(phase, error = '') {
-  state = { ...state, phase, error };
+function setPhase(phase) {
+  state = { ...state, phase };
   notify();
 }
 
-async function loadSession() {
+export async function init() {
   setPhase('loading');
   try {
-    const me = await api.login(code);
-    if (!me.ok) {
-      api.clearCode();
-      code = '';
-      return setPhase('login', me.error === 'bad_code' ? 'bad_code' : 'connect');
-    }
-    const data = await api.list(code);
+    const data = await api.list();
     if (!data.ok) throw new Error(data.error);
-    state = { ...state, session: { role: me.role, subject: me.subject }, tasks: data.tasks };
+    state = { ...state, tasks: data.tasks };
     setPhase('ready');
     startPolling();
   } catch {
     setPhase('error');
   }
-}
-
-export function init() {
-  code = api.getSavedCode();
-  if (!code) return setPhase('login');
-  return loadSession();
-}
-
-export async function login(input) {
-  code = input.trim();
-  if (!code) return setPhase('login', 'bad_code');
-  try {
-    const me = await api.login(code);
-    if (!me.ok) {
-      code = '';
-      return setPhase('login', 'bad_code');
-    }
-    api.saveCode(code);
-  } catch {
-    code = '';
-    return setPhase('login', 'connect');
-  }
-  return loadSession();
-}
-
-export function logout() {
-  stopPolling();
-  dirty.forEach((e) => clearTimeout(e.timer));
-  dirty.clear();
-  syncError = false;
-  api.clearCode();
-  code = '';
-  state = { phase: 'login', error: '', tasks: [], session: null };
-  notify();
-  notifySync();
 }
 
 /* ---------------------------------- writing ---------------------------------- */
@@ -121,17 +78,15 @@ async function flush(id, { keepalive = false } = {}) {
   }
   entry.inflight = true;
   try {
-    const res = entry.deleted ? await api.remove(code, id, { keepalive }) : await api.upsert(code, task, { keepalive });
+    const res = entry.deleted ? await api.remove(id, { keepalive }) : await api.upsert(task, { keepalive });
     entry.inflight = false;
     if (res.ok) {
       if (entry.rev === rev) dirty.delete(id);
       syncError = false;
-    } else if (res.error === 'bad_code') {
-      return logout();
     } else if (res.error === 'busy') {
       throw new Error('busy');
     } else {
-      // The server refused this change (e.g. read-only): drop it and show the server's truth.
+      // The server refused this change: drop it and show the Sheet's version.
       dirty.delete(id);
       syncError = true;
       pollNow(true);
@@ -150,7 +105,7 @@ export function flushAll() {
 
 export function updateTask(id, patch, { silent = false } = {}) {
   const task = getTask(id);
-  if (!task || !canEdit(task.subject)) return;
+  if (!task) return;
   Object.assign(task, patch);
   markDirty(id, silent ? SAVE_DELAY_MS : 100);
   if (!silent) notify();
@@ -158,7 +113,6 @@ export function updateTask(id, patch, { silent = false } = {}) {
 
 export function addTask(data) {
   const task = { id: `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, status: 'todo', note: '', due: '', ...data };
-  if (!canEdit(task.subject)) return null;
   state.tasks.push(task);
   markDirty(task.id, 100);
   notify();
@@ -166,8 +120,7 @@ export function addTask(data) {
 }
 
 export function deleteTask(id) {
-  const task = getTask(id);
-  if (!task || !canEdit(task.subject)) return;
+  if (!getTask(id)) return;
   state.tasks = state.tasks.filter((t) => t.id !== id);
   markDirty(id, 100, true);
   notify();
@@ -186,7 +139,7 @@ const userIsEditing = () =>
 async function pollNow(force = false) {
   if (state.phase !== 'ready' || (!force && (dirty.size || userIsEditing()))) return;
   try {
-    const data = await api.list(code);
+    const data = await api.list();
     if (!data.ok || dirty.size || state.phase !== 'ready') return;
     if (fingerprint(data.tasks) !== fingerprint(state.tasks)) {
       state = { ...state, tasks: data.tasks };
@@ -198,13 +151,8 @@ async function pollNow(force = false) {
 }
 
 function startPolling() {
-  stopPolling();
-  pollTimer = setInterval(pollNow, POLL_MS);
-}
-
-function stopPolling() {
   clearInterval(pollTimer);
-  pollTimer = null;
+  pollTimer = setInterval(pollNow, POLL_MS);
 }
 
 document.addEventListener('visibilitychange', () => {
